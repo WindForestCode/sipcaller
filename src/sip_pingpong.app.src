@@ -1,0 +1,11 @@
+{application, sip_pingpong, [
+    {description, "SIP PingPong Application"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {mod, {sip_pingpong_app, []}},
+    {applications, [kernel, stdlib, nksip]},
+    {env, []},
+    {modules, []},
+    {licenses, ["Apache-2.0"]},
+    {links, []}
+ ]}.
