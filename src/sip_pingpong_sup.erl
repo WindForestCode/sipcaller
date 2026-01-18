@@ -29,7 +29,14 @@ init([]) ->
             sip_from => "sip:sip_client@127.0.0.1",
             plugins => [nksip_uac_auto_auth],
             sip_listen => "sip:127.0.0.1:5075"
-        })
+        }),
+        %% Модуль для БД, как gen_server
+        #{
+            id => sip_client_db,
+            start => {sip_client_db, start_link, []},
+            restart => permanent,
+            type => worker
+          }
     ],
     io:format("sip_pingpong_sup: ChildSpecs ~p~n", [ChildSpecs]),
     SupFlags = #{

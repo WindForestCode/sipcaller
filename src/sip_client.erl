@@ -9,6 +9,6 @@
 %% SIP callbacks: https://github.com/NetComposer/nksip/blob/master/doc/reference/callback_functions.md
 
 call(TargetUri) ->
-    io:format("sip_client: calling back to client ~p~n", [TargetUri]),
+    io:format("sip_client: calling to client ~p~n", [TargetUri]),
     nksip_uac:invite(sip_client, TargetUri, [auto_2xx_ack]),
     ok.

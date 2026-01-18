@@ -3,7 +3,7 @@
 %%
 -module(sip_server).
 
--export([schedule_callback/1]).
+-export([schedule_callback/1, call_user/1]).
 -export([sip_get_user_pass/4, sip_authorize/3, sip_route/5, sip_register/2, sip_invite/2]).
 
 -include_lib("nkserver/include/nkserver_module.hrl").
@@ -12,7 +12,12 @@
 schedule_callback(TargetUri) ->
     %% Обратный звонок клиенту через 10 секунд (pong)
     {ok, _} = timer:apply_after(10000, sip_client, call, [TargetUri]),
-    io:format("sip_server: schedule_callback: wait timeout 10 sec...~n").
+    io:format("sip_server: schedule_callback: wait timeout 10 sec...~n~p", [TargetUri]).
+
+call_user(UserId) ->
+    TargetUri = sip_client_db:get_contact(UserId),
+    sip_client:call(TargetUri),
+    io:format("sip_server: calling User~p.~n", [TargetUri]).
 
 %% Called to check the user password for a realm
 sip_get_user_pass(User, _Realm, _Req, _Call) ->
@@ -27,7 +32,8 @@ sip_authorize(AuthList, Req, _Call) ->
     FoundedUser = find_user_no_auth(FromUser),
     io:format("sip_server: trying to auth user ~p~n", [FoundedUser]),
     case lists:member(dialog, AuthList) orelse lists:member(register, AuthList) of
-        true -> ok;
+        true ->
+            ok;
         false when Method =:= 'INVITE' -> ok;
         false when Method =:= 'REGISTER' andalso FoundedUser =/= [] -> ok;
         false ->
@@ -43,7 +49,6 @@ sip_route(_Scheme, <<>>, <<"localhost">>, _Req, _Call) ->
     % we want to act as an endpoint or B2BUA
     io:format("sip_server: sip_route(User = <<>>)~n"),
     process;
-
 sip_route(_Scheme, User, _Domain, Req, _Call) ->
     io:format("sip_server: sip_route(User = ~p)~n", [User]),
     case nksip_request:is_local_ruri(Req) of
@@ -83,6 +88,8 @@ sip_invite(Req, _Call) ->
             case nksip_sdp:is_sdp(Body) of
                 true ->
                     Contact = nksip_sipmsg:get_meta(contacts, Req),
+                    % Сохранение контактов
+                    sip_client_db:save_contact(Contact),
                     % Планируем ответный звонок клиенту через 10 секунд
                     io:format("sip_server: schedule callback to ~p~n", [Contact]),
                     schedule_callback(Contact),
@@ -121,7 +128,8 @@ find_pass_userauth(User) ->
     end,
     UserList = lists:filter(Filter, Users),
     case UserList of
-        [] -> <<>>;
+        [] ->
+            <<>>;
         _ ->
             [UserMap] = UserList,
             #{<<"userAuth">> := UserAuth} = UserMap,
