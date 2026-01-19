@@ -14,8 +14,7 @@ schedule_callback(TargetUri) ->
     {ok, _} = timer:apply_after(10000, sip_client, call, [TargetUri]),
     io:format("sip_server: schedule_callback: wait timeout 10 sec...~n~p", [TargetUri]).
 
-call_user(UserId) ->
-    TargetUri = sip_client_db:get_contact(UserId),
+call_user(TargetUri) ->
     sip_client:call(TargetUri),
     io:format("sip_server: calling User~p.~n", [TargetUri]).
 
